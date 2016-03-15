@@ -147,9 +147,12 @@ module ActiveRecord
     end
 
     def self.can_be_bound?(value) # :nodoc:
-      !value.nil? &&
-        !value.is_a?(Hash) &&
+      case value
+      when nil, Hash, Arel::Attributes::Attribute
+        false
+      else
         handler_for(value) == BASIC_OBJECT_HANDLER
+      end
     end
   end
 end

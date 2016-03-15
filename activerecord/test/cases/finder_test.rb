@@ -801,6 +801,10 @@ class FinderTest < ActiveRecord::TestCase
     assert_equal "#{ActiveRecord::Base.connection.quote('10')}::integer '2009-01-01'::date", l.call
   end
 
+  def test_bind_arel_attribute
+    assert_equal Company.count, Company.where(:name => Company.arel_table[:name]).count
+  end
+
   def test_string_sanitation
     assert_not_equal "'something ' 1=1'", ActiveRecord::Base.sanitize("something ' 1=1")
     assert_equal "'something; select table'", ActiveRecord::Base.sanitize("something; select table")
