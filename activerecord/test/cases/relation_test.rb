@@ -57,6 +57,12 @@ module ActiveRecord
       assert_equal({ "id" => 10 }, relation.where_values_hash)
     end
 
+    def test_range_values
+      relation = Relation.new(Post)
+      relation.where!(id: 10..20)
+      assert_equal({ "id" => 10..20 }, relation.where_values_hash)
+    end
+
     def test_values_wrong_table
       relation = Relation.new(Post)
       relation.where! Comment.arel_table[:id].eq(10)
