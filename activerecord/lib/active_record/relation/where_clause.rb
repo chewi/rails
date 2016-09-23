@@ -48,20 +48,32 @@ module ActiveRecord
 
       def to_h(table_name = nil)
         equalities = equalities(predicates)
+        betweens = betweens(predicates)
+
         if table_name
-          equalities = equalities.select do |node|
-            case node.left
-            when Arel::Attributes::Attribute, Arel::Nodes::UnqualifiedColumn
-              node.left.relation.name == table_name
+          [equalities, betweens].each do |nodes|
+            nodes.select! do |node|
+              case node.left
+              when Arel::Attributes::Attribute, Arel::Nodes::UnqualifiedColumn
+                node.left.relation.name == table_name
+              end
             end
           end
         end
 
-        equalities.map { |node|
+        equalities.map! do |node|
           name = node.left.name.to_s
           value = extract_node_value(node.right)
           [name, value]
-        }.to_h
+        end
+
+        betweens.map! do |node|
+          name = node.left.name.to_s
+          range = Range.new(*extract_node_value(node.right.children))
+          [name, range]
+        end
+
+        (equalities + betweens).to_h
       end
 
       def ast
@@ -106,6 +118,21 @@ module ActiveRecord
           end
 
           equalities
+        end
+
+        def betweens(predicates)
+          betweens = []
+
+          predicates.each do |node|
+            case node
+            when Arel::Nodes::Between
+              betweens << node
+            when Arel::Nodes::And
+              betweens.concat betweens(node.children)
+            end
+          end
+
+          betweens
         end
 
         def predicates_unreferenced_by(other)
