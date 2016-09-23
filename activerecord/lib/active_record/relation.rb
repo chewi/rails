@@ -558,13 +558,13 @@ module ActiveRecord
     #   User.where(name: 'Oscar').where_values_hash
     #   # => {name: "Oscar"}
     def where_values_hash(relation_table_name = table_name)
+      binds = Hash[bind_values.find_all(&:first).map { |column, v| [column.name, v] }]
+
       equalities = where_values.grep(Arel::Nodes::Equality).find_all { |node|
         node.left.relation.name == relation_table_name
       }
 
-      binds = Hash[bind_values.find_all(&:first).map { |column, v| [column.name, v] }]
-
-      Hash[equalities.map { |where|
+      equalities.map! do |where|
         name = where.left.name
         [name, binds.fetch(name.to_s) {
           case where.right
@@ -573,7 +573,17 @@ module ActiveRecord
             where.right.val
           end
         }]
-      }]
+      end
+
+      betweens = where_values.flatten.grep(Arel::Nodes::Between).find_all { |node|
+        node.left.relation.name == relation_table_name
+      }
+
+      betweens.map! do |where|
+        [where.left.name, Range.new(*where.right.children.map(&:val))]
+      end
+
+      Hash[equalities + betweens]
     end
 
     def scope_for_create
