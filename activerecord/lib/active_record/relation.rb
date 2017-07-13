@@ -561,7 +561,10 @@ module ActiveRecord
       binds = Hash[bind_values.find_all(&:first).map { |column, v| [column.name, v] }]
 
       equalities = where_values.grep(Arel::Nodes::Equality).find_all { |node|
-        node.left.relation.name == relation_table_name
+        case node.left
+        when Arel::Attributes::Attribute, Arel::Nodes::UnqualifiedColumn
+          node.left.relation.name == relation_table_name
+        end
       }
 
       equalities.map! do |where|
@@ -576,7 +579,10 @@ module ActiveRecord
       end
 
       betweens = where_values.flatten.grep(Arel::Nodes::Between).find_all { |node|
-        node.left.relation.name == relation_table_name
+        case node.left
+        when Arel::Attributes::Attribute, Arel::Nodes::UnqualifiedColumn
+          node.left.relation.name == relation_table_name
+        end
       }
 
       betweens.map! do |where|
