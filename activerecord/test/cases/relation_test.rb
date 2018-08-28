@@ -64,6 +64,12 @@ module ActiveRecord
       assert_equal({}, relation.where_values_hash)
     end
 
+    def test_values_lhs_function
+      relation = Relation.new(Post)
+      relation.where! (relation.table[:id] + relation.table[:id]).eq(10)
+      assert_equal({}, relation.where_values_hash)
+    end
+
     def test_tree_is_not_traversed
       relation = Relation.new(Post)
       left     = relation.table[:id].eq(10)
