@@ -50,7 +50,10 @@ module ActiveRecord
         equalities = equalities(predicates)
         if table_name
           equalities = equalities.select do |node|
-            node.left.relation.name == table_name
+            case node.left
+            when Arel::Attributes::Attribute, Arel::Nodes::UnqualifiedColumn
+              node.left.relation.name == table_name
+            end
           end
         end
 
